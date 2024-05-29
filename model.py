@@ -7,125 +7,85 @@ import numpy as np
 #%%
 
 class NO(nn.Module):
-    def __init__(self, n_modes, 
-                 P_shape = [20,256,32], 
-                 Q_shape = [32,256,20],
-                   no_skip = 'linear', 
-                   conv = 'fourier',
-                   level = None):
+    def __init__(self, **pmodel):
+        """
+        args:
+        pmodel (dict): dictionary containing the parameters of the model as
+
+        'P_shape' : list of integers, shape of the encoder
+        'Q_shape' : list of integers, shape of the decoder
+        'n_modes' : int, number of modes for the spectral convolutions
+        'no_skip' : str, type of skip connection
+        'conv' : str, type of convolution
+        'level' : int, level of wavelet decomposition
+        'n_ino' : int, number of INO blocks
+        'residual' : bool, residual connection
+        'nonlinearity' : function, nonlinearity
+        """
         
         super(NO, self).__init__()
 
-        self.n_modes = n_modes
-        self.Q_shape = Q_shape
-        self.P_shape = P_shape
-        self.no_skip = no_skip
-        self.conv = conv
-        self.level = level
+        self.pmodel = pmodel
 
-        self.hidden_channels = self.P_shape[-1]
+        self.encoder = MLP(pmodel['P_shape'])
 
-        self.encoder = MLP(self.P_shape)
-        self.NO_Block = NO_Block(n_modes = self.n_modes, 
-                                  channels=self.hidden_channels, 
-                                  skip=self.no_skip, 
-                                  conv = self.conv,
-                                    level = self.level)
+        self.one_step = NO_Block(**pmodel)
         
-        self.decoder = MLP(self.Q_shape)
-
-    def forward(self, x, targets = None):
-
-
-        x_old = x.clone()
-        x_encod = self.encoder(x_old)
-        x = self.NO_Block(x_encod)
-        x = self.decoder(x)
-
-
-        return x
+        self.decoder = MLP(pmodel['Q_shape'])
     
-class Identity(nn.Module):
-    def __init__(self):
-        super(Identity, self).__init__()
+    def forward(self, x, n=1):
+            
+        phis = []
+        x_advanceds = []
 
-    def forward(self, x):
-        return x
-    
-class INO(nn.Module):
-    def __init__(self, n_modes, 
-                 P_shape = [20,256,32], 
-                 Q_shape = [32,256,20],
-                   no_skip = 'linear', 
-                   conv = 'fourier',
-                   level = None,
-                    n_ino = 1,
-                   nonlinearity=F.gelu):
-        
-        super(INO, self).__init__()
+        phis.append(self.encoder(x))
 
-        self.n_modes = n_modes
-        self.Q_shape = Q_shape
-        self.P_shape = P_shape
-        self.no_skip = no_skip
-        self.conv = conv
-        self.level = level
-        self.n_ino = n_ino
-        self.nonlinearity = nonlinearity
+        for _ in range(n):
 
-        self.hidden_channels = self.P_shape[-1]
+            phis.append(self.one_step(phis[-1]))
 
-        self.encoder = MLP(self.P_shape)
-        self.NO_Block = NO_Block(n_modes = self.n_modes, 
-                                  channels=self.hidden_channels, 
-                                  skip=self.no_skip, 
-                                  conv = self.conv,
-                                    level = self.level)
-        
-        self.res = Identity() 
-        
-        self.decoder = MLP(self.Q_shape)
+            if self.pmodel['residual']:
+                x_advanceds.append(self.decoder(phis[-1] + phis[0]))
+            else:
+                x_advanceds.append(self.decoder(phis[-1]))
 
-    def forward(self, x, targets = None):
+        return torch.stack(x_advanceds, dim=1),  torch.stack(phis, dim=1)
 
 
-        x_old = x.clone()
-        x = self.encoder(x_old)
-        for _ in range(self.n_ino):
-            x = self.NO_Block(x)
-
-        x = self.nonlinearity(x)*(1/self.n_ino) 
-        x = self.decoder(x) + self.res(x_old)
-
-
-        return x
-
+ 
 class NO_Block(nn.Module):
-    def __init__(self, n_modes, channels, skip, nonlinearity=F.gelu, conv = 'fourier',
-                 level = None):
+    def __init__(self, nonlinearity=F.gelu, **pmodel):
         super(NO_Block, self).__init__()
-        self.n_modes = n_modes
-        self.channels = channels
-        self.skip = skip
-        self.nonlinearity = nonlinearity
-        self.conv = conv
-        self.level = level
 
-        if conv == 'fourier':
+        self.pmodel = pmodel
+        self.n_modes = pmodel['n_modes']
+        self.channels = pmodel['P_shape'][-1]   
+        self.skip = pmodel['no_skip']
+        self.nonlinearity = nonlinearity
+        self.conv = pmodel['conv']
+
+
+        if self.conv == 'fourier':
             self.convs = SpectralConv( self.channels, self.n_modes)
-        elif conv == 'wavelet':
-            self.convs = WaveConv(self.channels, self.n_modes, level = self.level)
+        elif self.conv == 'wavelet':
+            self.convs = WaveConv(self.channels, self.n_modes, level = pmodel['level'])
+
+        elif self.conv == 'linearFilterConvolution':
+            self.convs = nn.Conv2d(self.channels, self.channels, kernel_size = pmodel['kernel'], stride = pmodel['stride'], padding = 'same')
+        else:
+            raise ValueError(f"Convolution {self.conv} not recognized")
 
         if self.skip == 'linear':
             self.skip = nn.Conv2d(self.channels, self.channels, kernel_size = (1,1), stride = (1,1))
         elif self.skip == 'identity':
             self.skip = Identity()   
+        else:
+            self.skip = 'None'
+            print('No skip connection')
 
     def forward(self, x):
 
         x_old = x.clone()
-
-
 
         x_convs = self.convs(x_old)
 
@@ -136,8 +96,19 @@ class NO_Block(nn.Module):
             x = x_convs + x_skip
 
         #nonlinear activation
-        # x = self.nonlinearity(x)
+        x = self.nonlinearity(x)
         return x
+    
+
+    
+
+class Identity(nn.Module):
+    def __init__(self):
+        super(Identity, self).__init__()
+
+    def forward(self, x):
+        return x
+    
 
 class MLP(nn.Module):
     def __init__(self, shape = [20,256,32], nonlinearity = F.gelu):
@@ -154,6 +125,7 @@ class MLP(nn.Module):
             x = self.nonlinearity(layer(x))
         x = self.fcs[-1](x)
         return x
+  
                  
 class SpectralConv(nn.Module):
     def __init__(self,channels,  
@@ -229,3 +201,76 @@ class WaveConv(nn.Module):
         return x
 
 # %%
+
+
+
+
+
+class INO(nn.Module):
+    def __init__(self, n_modes, 
+                 P_shape = [20,256,32], 
+                 Q_shape = [32,256,20],
+                   no_skip = 'linear', 
+                   conv = 'fourier',
+                   level = None,
+                    n_ino = 1,
+                    residual = False,
+                   nonlinearity=F.gelu):
+        
+        super(INO, self).__init__()
+
+        self.n_modes = n_modes
+        self.Q_shape = Q_shape
+        self.P_shape = P_shape
+        self.no_skip = no_skip
+        self.conv = conv
+        self.level = level
+        self.n_ino = n_ino
+        self.residual = residual
+        self.nonlinearity = nonlinearity
+
+        self.hidden_channels = self.P_shape[-1]
+
+        self.encoder = MLP(self.P_shape)
+        self.NO_Block = NO_Block(n_modes = self.n_modes, 
+                                  channels=self.hidden_channels, 
+                                  skip=self.no_skip, 
+                                  conv = self.conv,
+                                    level = self.level)
+        
+        if self.residual:
+            self.res = Identity() 
+        
+        self.decoder = MLP(self.Q_shape)
+
+    def forward(self, x, targets = None):
+
+
+        x_old = x.clone()
+        x = self.encoder(x_old)
+        for _ in range(self.n_ino):
+            x = self.NO_Block(x)
+
+        x = self.nonlinearity(x)*(1/self.n_ino) 
+
+        if self.residual:
+            x = self.decoder(x) + self.res(x_old)
+        else:
+            x = self.decoder(x)
+
+
+        return x
+
+    def forward_n_remember(self, x, n):
+            
+        phis = []
+        x_advanceds = []
+
+        phis.append(self.encoder(x))
+
+        for _ in range(n):
+
+            phis.append(self.NO_Block(phis[-1]))
+            x_advanceds.append(self.decoder(phis[-1]))
+
+        return torch.stack(x_advanceds, dim=1),  torch.stack(phis, dim=1)

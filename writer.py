@@ -6,11 +6,11 @@ This module contains the function summary_file that writes a summary of the mode
 It also prints the summary to the console if print_flag is set to True.
 """
 
-def summary_file(args, model, train_data, test_data, print_flag=False):
+def summary_file(args, Lmodel, train_data, test_data, str_name, print_flag=False):
     # Ensure the saving directory exists
-    os.makedirs(args.saving_path, exist_ok=True)
+    # os.makedirs(args.saving_path, exist_ok=True)
 
-    with open(args.saving_path + '/model_summary.txt', 'w') as f:
+    with open(args.saving_path + '/'+ str_name + '/model_summary.txt', 'w') as f:
         #title
         f.write('       Model Summary\n\n')
 
@@ -19,11 +19,11 @@ def summary_file(args, model, train_data, test_data, print_flag=False):
         f.write('\n')
 
         # Write ModelSummary to file
-        f.write(str(ModelSummary(model)) + '\n\n')
-        f.write(str(model.OneStepNO) + '\n\n')
+        f.write(str(ModelSummary(Lmodel)) + '\n\n')
+        f.write(str(Lmodel.model) + '\n\n')
 
         # Loop through layers and write layer summaries
-        for layer in model.OneStepNO.children():
+        for layer in Lmodel.model.children():
             lSum = LayerSummary(layer)
             f.write(f"{lSum.layer_type}: {lSum.num_parameters} parameters\n")
         f.write('\n')
@@ -34,5 +34,5 @@ def summary_file(args, model, train_data, test_data, print_flag=False):
 
         #print this file
     if print_flag:
-        with open(args.saving_path + 'model_summary.txt', 'r') as f:
+        with open(args.saving_path + '/'+ str_name+ '/model_summary.txt', 'r') as f:
             print(f.read())

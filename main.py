@@ -1,15 +1,13 @@
 #%%
 from torch.utils.data import DataLoader
-import torch
 import lightning as L
-# from pytorch_lightning.callbacks import ModelCheckpoint
-from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 from lightning.pytorch.loggers import TensorBoardLogger
 
 from sentinel_data import SentinelDataset
 from parser import Config
 from writer import summary_file
-from Lmodel import RecurentN0
+from Lmodel import Lmodel
 
 #%%
 
@@ -19,22 +17,18 @@ from Lmodel import RecurentN0
 
 args =  Config('config.ini')
 
+pmodel = args.model.__dict__
+
+
 ################################################################
 #       Model
 ################################################################
 
-
-
-
-model = RecurentN0(n_modes=args.n_modes, 
-                    P_shape = args.P_shape, 
-                    Q_shape = args.Q_shape, 
-                    no_skip = args.no_skip,
-                    future = args.future,
-                    loss_weights=args.loss_weights,
-                    conv = args.conv,
-                    level = args.level,
-                    n_ino = args.n_ino)
+model = Lmodel(model_name = args.model_name,
+                lr =  args.learning_rate,
+                loss_weights = args.loss_weights,
+                future = args.future, 
+                **pmodel)
 
 # #train from a checkpoint
 # model = RecurentN0.load_from_checkpoint(
@@ -45,20 +39,20 @@ model = RecurentN0(n_modes=args.n_modes,
 #       Data
 ################################################################
 
-train_data = SentinelDataset(path_data=args.path_data, 
-                             n_train=args.n_train, 
-                             size=args.size, 
+train_data = SentinelDataset(path_data= args.path_data, 
+                             n_train= args.n_train, 
+                             size= args.size, 
                              train = True,
-                             future=args.future)
+                             future= args.future)
 
-train_loader = DataLoader(train_data, batch_size=args.batch_size, 
+train_loader = DataLoader(train_data, batch_size= args.batch_size, 
                           shuffle=True, num_workers=1, pin_memory=True)
 
-test_data = SentinelDataset(path_data=args.path_data,
-                            n_train=args.n_train,
-                            train = False, 
-                            size=args.size, 
-                            future=args.future)
+test_data = SentinelDataset(path_data= args.path_data,
+                            n_train= args.n_train, 
+                            size= args.size, 
+                            train = False,
+                            future= args.future)
 
 test_loader = DataLoader(test_data, batch_size=args.batch_size, 
                          shuffle=False, num_workers=1, pin_memory=True)
@@ -67,28 +61,28 @@ test_loader = DataLoader(test_data, batch_size=args.batch_size,
 #       Summary file
 ################################################################
 
-summary_file(args, model, train_data, test_data)
+
+summary_file(args, model, train_data, test_data, args.str_name)
 
 ################################################################
 #       Trainer
 ################################################################
-from datetime import datetime
-current_time = datetime.now()
-time_str = current_time.strftime('%H%M')
 
 checkpoint_callback = ModelCheckpoint(
     monitor='eval_loss_total',  # Nom de la métrique à utiliser pour sélectionner les meilleurs modèles
-    dirpath=args.saving_path +'/'+time_str,  # Répertoire où enregistrer les modèles
+    dirpath=args.saving_path +'/'+ args.str_name,  # Répertoire où enregistrer les modèles
     filename='{epoch}-{val_loss:.2f}',
     save_top_k=3,  # Nombre de modèles à conserver
     mode='min'  # Mode de sélection des meilleurs modèles ('min' pour minimiser la métrique, 'max' pour la maximiser)
 )
 
-logger = TensorBoardLogger(args.saving_path +'/'+ time_str, name=None)
+
+
+logger = TensorBoardLogger(args.saving_path +'/'+ args.str_name, name=None)
 
 
 trainer = L.Trainer(max_epochs=args.n_epochs,accelerator="gpu", 
-                    devices=[1], logger=logger, 
+                    devices=[2], logger=logger, 
                     callbacks=[checkpoint_callback],
                     log_every_n_steps=10)
 
