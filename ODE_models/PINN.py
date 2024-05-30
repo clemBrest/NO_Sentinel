@@ -3,7 +3,7 @@ from torch import nn,  autograd
 from neuralKoopman import KoopmanAE
 import torch.nn.functional as F
 import lightning as L
-import script.NO_Sentinel.lightning.Lmodel as Lmodel
+import light.Lmodel as Lmodel
 
 
 class Prior(nn.Module):

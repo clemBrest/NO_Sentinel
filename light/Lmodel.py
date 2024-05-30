@@ -3,8 +3,8 @@ import torch
 import lightning as L
 from pytorch_lightning.utilities.model_summary import ModelSummary, LayerSummary
 import sys
-from script.NO_Sentinel.PDE_models.model import NO, INO
-from script.NO_Sentinel.ODE_models.Koopman_DeepOperatorNet import KoopmanAE, KoopmanDeepOperatorNet
+from PDE_models.model import NO
+from ODE_models.Koopman_DeepOperatorNet import KoopmanAE, KoopmanDeepOperatorNet
 
 #%%
 
@@ -27,8 +27,6 @@ class Lmodel(L.LightningModule):
         match model_name:
             case 'NO':
                 self.model = NO(**kwargs)
-            case 'INO':
-                self.model = INO(**kwargs)
             case 'Koopman':
                 self.model = KoopmanAE(**kwargs)
             case 'KoopmanDeepOperatorNet':

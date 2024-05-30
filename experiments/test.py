@@ -3,8 +3,8 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 
-from script.NO_Sentinel.utils.parser import Config
-from script.NO_Sentinel.lightning.Lmodel import Lmodel
+from utils.parser import Config
+from light.Lmodel import Lmodel
 #%%
 
 ##################################################################
