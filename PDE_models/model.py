@@ -2,8 +2,7 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from pytorch_wavelets import DWT, IDWT 
-import numpy as np
+from .convolution import SpectralConv, WaveConv
 #%%
 
 class NO(nn.Module):
@@ -132,151 +131,9 @@ class MLP(nn.Module):
         x = self.fcs[-1](x)
         return x
   
-                 
-class SpectralConv(nn.Module):
-    def __init__(self,channels,  
-                 modes):       
-        super(SpectralConv, self).__init__()
 
-        self.in_channels = channels
-        self.out_channels = channels
-        self.modes = modes
-
-        self.scale = 1 / (self.in_channels * self.out_channels)
-
-
-        self.weights_im = nn.Parameter(self.scale * torch.rand(channels, channels, self.modes, self.modes) )
-        self.weights_re = nn.Parameter(self.scale * torch.rand(channels, channels, self.modes, self.modes) )
-
-
-
-    def forward(self, x):
-
-        x_ft = torch.fft.fft2(x, dim = (-2,-1))[...,:self.modes, :self.modes]
-
-        out_ft_re = torch.einsum("bikl,iokl->bokl", x_ft.real, self.weights_re) - torch.einsum("bikl,iokl->bokl", x_ft.imag, self.weights_im )
-        out_ft_im = torch.einsum("bikl,iokl->bokl", x_ft.real, self.weights_im) + torch.einsum("bikl,iokl->bokl", x_ft.imag, self.weights_re)
-        
-
-        out_ft = out_ft_re + 1j* out_ft_im
-
-
-        x = torch.fft.irfft2(out_ft, s=(x.size(-2), x.size(-1)), dim = (-2,-1))
-        
-        return x
-    
-class WaveConv(nn.Module):
-    def __init__(self, channels, 
-                modes,
-                level = 1, wavelet = 'db1', mode='symmetric'):
-        super(WaveConv, self).__init__()
-
-        self.channels = channels
-
-        self.wavelet = wavelet       
-        self.mode = mode
-        self.level = level
-
-
-        self.modes = modes
-        
-        # Parameter initilization
-        self.scale = (1 / (channels * channels))
-        self.weights1 = nn.Parameter(self.scale * torch.rand(channels, channels, self.modes, self.modes))
-        self.weights2 = nn.Parameter(self.scale * torch.rand(channels, channels, self.modes, self.modes))
-        self.weights3 = nn.Parameter(self.scale * torch.rand(channels, channels, self.modes, self.modes))
-        self.weights4 = nn.Parameter(self.scale * torch.rand(channels, channels, self.modes, self.modes))
-
-    def forward(self, x):
-
-        dwt = DWT(J=self.level, mode=self.mode, wave=self.wavelet).to(x.device)
-        idwt = IDWT(mode=self.mode, wave=self.wavelet).to(x.device)
-
-        x_ft, x_coeff = dwt(x)
-
-        out_ft = torch.zeros_like(x_ft)
-        out_coeff = [torch.zeros_like(coeffs, device= x.device) for coeffs in x_coeff]
-        
-        out_ft = torch.einsum("bixy,ioxy->boxy", x_ft, self.weights1)
-        out_coeff[-1][:,:,0,:,:] = torch.einsum("bixy,ioxy->boxy", x_coeff[-1][:,:,0,:,:].clone(), self.weights2)
-        out_coeff[-1][:,:,1,:,:] = torch.einsum("bixy,ioxy->boxy", x_coeff[-1][:,:,1,:,:].clone(), self.weights3)
-        out_coeff[-1][:,:,2,:,:] = torch.einsum("bixy,ioxy->boxy", x_coeff[-1][:,:,2,:,:].clone(), self.weights4)
-        
-        x = idwt((out_ft, out_coeff))
-        
-        return x
 
 # %%
 
 
 
-
-
-class INO(nn.Module):
-    def __init__(self, n_modes, 
-                 P_shape = [20,256,32], 
-                 Q_shape = [32,256,20],
-                   no_skip = 'linear', 
-                   conv = 'fourier',
-                   level = None,
-                    n_ino = 1,
-                    residual = False,
-                   nonlinearity=F.gelu):
-        
-        super(INO, self).__init__()
-
-        self.n_modes = n_modes
-        self.Q_shape = Q_shape
-        self.P_shape = P_shape
-        self.no_skip = no_skip
-        self.conv = conv
-        self.level = level
-        self.n_ino = n_ino
-        self.residual = residual
-        self.nonlinearity = nonlinearity
-
-        self.hidden_channels = self.P_shape[-1]
-
-        self.encoder = MLP(self.P_shape)
-        self.NO_Block = NO_Block(n_modes = self.n_modes, 
-                                  channels=self.hidden_channels, 
-                                  skip=self.no_skip, 
-                                  conv = self.conv,
-                                    level = self.level)
-        
-        if self.residual:
-            self.res = Identity() 
-        
-        self.decoder = MLP(self.Q_shape)
-
-    def forward(self, x, targets = None):
-
-
-        x_old = x.clone()
-        x = self.encoder(x_old)
-        for _ in range(self.n_ino):
-            x = self.NO_Block(x)
-
-        x = self.nonlinearity(x)*(1/self.n_ino) 
-
-        if self.residual:
-            x = self.decoder(x) + self.res(x_old)
-        else:
-            x = self.decoder(x)
-
-
-        return x
-
-    def forward_n_remember(self, x, n):
-            
-        phis = []
-        x_advanceds = []
-
-        phis.append(self.encoder(x))
-
-        for _ in range(n):
-
-            phis.append(self.NO_Block(phis[-1]))
-            x_advanceds.append(self.decoder(phis[-1]))
-
-        return torch.stack(x_advanceds, dim=1),  torch.stack(phis, dim=1)
