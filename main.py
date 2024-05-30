@@ -15,7 +15,7 @@ from Lmodel import Lmodel
 #       Arguments
 ###################################################################
 
-args =  Config('config.ini')
+args =  Config('configFilterConv.ini')
 
 pmodel = args.model.__dict__
 
@@ -82,7 +82,7 @@ logger = TensorBoardLogger(args.saving_path +'/'+ args.str_name, name=None)
 
 
 trainer = L.Trainer(max_epochs=args.n_epochs,accelerator="gpu", 
-                    devices=[2], logger=logger, 
+                    devices=[0], logger=logger, 
                     callbacks=[checkpoint_callback],
                     log_every_n_steps=10)
 
