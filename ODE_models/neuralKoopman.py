@@ -156,6 +156,26 @@ class KoopmanAE(nn.Module):
             phis.append(self.one_step_back(phis[-1]))
         x_advanced = self.decoder(phis[n])
         return x_advanced, torch.cat(tuple(phi.unsqueeze(0) for phi in phis), dim=0)
+    
+    def get_D(self):
+        """
+        Get the Continuous Koopman matrix.
+
+        Returns:
+            torch.Tensor: Continuous Koopman matrix.
+        """
+
+        # eigvals, eigvecs = torch.linalg.eig(self.K)
+
+        # eigvecs_inv = torch.inverse(eigvecs)
+
+        # eigvals = torch.diag(eigvals)
+
+        # self.D = eigvecs @ torch.log(eigvals) @ eigvecs_inv
+
+        self.D = torch.log(self.K)
+
+        return self.D
 
 
 class Encoder(nn.Module):
