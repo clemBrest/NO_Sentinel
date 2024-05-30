@@ -4,10 +4,10 @@ import lightning as L
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 from lightning.pytorch.loggers import TensorBoardLogger
 
-from sentinel_data import SentinelDataset
+from script.NO_Sentinel.datasets.sentinel_data import SentinelDataset
 from parser import Config
 from writer import summary_file
-from Lmodel import Lmodel
+from script.NO_Sentinel.lightning.Lmodel import Lmodel
 
 #%%
 

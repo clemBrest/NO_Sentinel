@@ -3,8 +3,8 @@ import torch
 import lightning as L
 from pytorch_lightning.utilities.model_summary import ModelSummary, LayerSummary
 import sys
-from model import NO, INO
-from Koopman_DeepOperatorNet import KoopmanAE, KoopmanDeepOperatorNet
+from script.NO_Sentinel.PDE_models.model import NO, INO
+from script.NO_Sentinel.ODE_models.Koopman_DeepOperatorNet import KoopmanAE, KoopmanDeepOperatorNet
 
 #%%
 
