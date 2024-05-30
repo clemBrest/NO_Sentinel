@@ -58,7 +58,6 @@ class NO_Block(nn.Module):
 
         self.pmodel = pmodel
         self.channels = pmodel['P_shape'][-1]   
-        self.skip = pmodel['no_skip']
         self.conv = pmodel['conv']
 
         if pmodel['activation'] == 'gelu':
@@ -82,9 +81,9 @@ class NO_Block(nn.Module):
         else:
             raise ValueError(f"Convolution {self.conv} not recognized")
 
-        if self.skip == 'linear':
+        if pmodel['no_skip'] == 'linear':
             self.skip = nn.Conv2d(self.channels, self.channels, kernel_size = (1,1), stride = (1,1))
-        elif self.skip == 'identity':
+        elif pmodel['no_skip'] == 'identity':
             self.skip = Identity()   
         else:
             self.skip = 'None'
@@ -102,7 +101,6 @@ class NO_Block(nn.Module):
             x_skip = self.skip(x_old)
             x = x_convs + x_skip
 
-        #nonlinear activation
         x = self.activation(x)
         return x
     
@@ -131,9 +129,3 @@ class MLP(nn.Module):
         x = self.fcs[-1](x)
         return x
   
-
-
-# %%
-
-
-
