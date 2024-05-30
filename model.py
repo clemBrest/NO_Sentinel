@@ -54,24 +54,32 @@ class NO(nn.Module):
 
  
 class NO_Block(nn.Module):
-    def __init__(self, nonlinearity=F.gelu, **pmodel):
+    def __init__(self, **pmodel):
         super(NO_Block, self).__init__()
 
         self.pmodel = pmodel
-        self.n_modes = pmodel['n_modes']
         self.channels = pmodel['P_shape'][-1]   
         self.skip = pmodel['no_skip']
-        self.nonlinearity = nonlinearity
         self.conv = pmodel['conv']
+
+        if pmodel['activation'] == 'gelu':
+            self.activation = F.gelu
+        elif pmodel['activation'] == 'relu':
+            self.activation = F.relu
+        elif pmodel['activation'] == 'Linear':
+            self.activation = Identity()
+        else:
+            raise ValueError(f"activation {pmodel['activation']} not recognized")
 
 
         if self.conv == 'fourier':
-            self.convs = SpectralConv( self.channels, self.n_modes)
+            self.convs = SpectralConv( self.channels, pmodel['n_modes'])
         elif self.conv == 'wavelet':
-            self.convs = WaveConv(self.channels, self.n_modes, level = pmodel['level'])
+            self.convs = WaveConv(self.channels, pmodel['n_modes'], level = pmodel['level'])
 
-        elif self.conv == 'linearFilterConvolution':
-            self.convs = nn.Conv2d(self.channels, self.channels, kernel_size = pmodel['kernel'], stride = pmodel['stride'], padding = 'same')
+        elif self.conv == 'FilterConvolution':
+            self.convs = nn.Conv2d(self.channels, self.channels, kernel_size = pmodel['kernel'], stride = pmodel['stride'], padding = pmodel['padding'])
+            
         else:
             raise ValueError(f"Convolution {self.conv} not recognized")
 
@@ -96,10 +104,8 @@ class NO_Block(nn.Module):
             x = x_convs + x_skip
 
         #nonlinear activation
-        x = self.nonlinearity(x)
+        x = self.activation(x)
         return x
-    
-
     
 
 class Identity(nn.Module):

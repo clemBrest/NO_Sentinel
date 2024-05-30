@@ -8,7 +8,7 @@ It also prints the summary to the console if print_flag is set to True.
 
 def summary_file(args, Lmodel, train_data, test_data, str_name, print_flag=False):
     # Ensure the saving directory exists
-    # os.makedirs(args.saving_path, exist_ok=True)
+    os.makedirs(args.saving_path+'/'+ str_name , exist_ok=True)
 
     with open(args.saving_path + '/'+ str_name + '/model_summary.txt', 'w') as f:
         #title

@@ -57,6 +57,8 @@ class Config:
                 self.str_name = f"{self.model_name}_{self.model.conv}_{self.model.n_modes}_{self.model.no_skip}_Res:{self.model.residual}_lr:{self.learning_rate}_batch:{self.batch_size}"
             if 'wavelet' in self.model.conv:
                 self.str_name = f"{self.model_name}_{self.model.conv}_{self.model.level}_{self.model.no_skip}_Res:{self.model.residual}_lr:{self.learning_rate}_batch:{self.batch_size}"
+            if 'FilterConvolution' in self.model.conv:
+                self.str_name = f"{self.model_name}_conv:{self.model.conv}_kernel:{self.model.kernel}_stride:{self.model.stride}_skip:{self.model.no_skip}_Res:{self.model.residual}_activation:{self.model.activation}lr:{self.learning_rate}_batch:{self.batch_size}"
         elif self.model_name == 'Koopman':
             self.str_name = f"{self.model_name}_{self.model.linear_dims}_{self.learning_rate}batch:{self.batch_size}"
 
@@ -74,6 +76,7 @@ class ModelConfig:
         # self.n_ino = config.getint('Model', 'n_ino', fallback=None)
         self.residual = config.getboolean('Model', 'residual', fallback=False)
         self.size = config.getint('Training', 'size')
+        self.activation = config.get('Model', 'activation', fallback='Linear')
         
 
 
@@ -83,8 +86,11 @@ class ModelConfig:
         elif 'fourier' in self.conv:
             self.n_modes = config.getint('Model', 'n_modes')
         
-        elif 'convolution_Matrix' in self.conv:
-            pass
+        elif 'FilterConvolution' in self.conv:
+            self.kernel = [int(x) for x in config.get('Model', 'kernel').strip('[]').split(', ')]
+            self.stride = config.getint('Model', 'stride')
+            self.padding = config.get('Model', 'padding')
+            self.padding = 0 if self.padding == '0' else self.padding
         else:
             raise ValueError('Invalid convolution type')
 
