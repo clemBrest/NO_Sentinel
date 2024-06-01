@@ -4,11 +4,6 @@ from datasets.sentinel_data_for_mlp import SentinelDataset as SentinelDatasetMLP
 from datasets.sentinel_data_for_conv2d import SentinelDataset as SentinelDatasetLinConv
 
 
-data_dict = {'NO': SentinelDatasetPDE, 
-             'MLP': SentinelDatasetMLP,
-            'LinConv': SentinelDatasetLinConv
-             }
-
 def SentinelDataset(train, **kwargs):
     data_dict = {'NO': SentinelDatasetPDE, 
              'MLP': SentinelDatasetMLP,

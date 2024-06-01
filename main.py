@@ -1,17 +1,17 @@
 #%%
-from torch.utils.data import DataLoader
-import lightning as L
-from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
-from lightning.pytorch.loggers import TensorBoardLogger
+import argparse
+from utils.config import Config
+
+from light.Lmodel import Lmodel
 
 from datasets.sentinel_data import SentinelDataset
-import argparse
+from torch.utils.data import DataLoader
 
-from utils.config import Config
 from utils.writer import summary_file
 
-
-from light.Lmodel import Lmodel, MLPmodel
+import lightning as L
+from lightning.pytorch.loggers import TensorBoardLogger
+from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 
 #%%
 
@@ -20,8 +20,8 @@ from light.Lmodel import Lmodel, MLPmodel
 ###################################################################
 parser = argparse.ArgumentParser(description='Process a config.ini file.')
 parser.add_argument('config_file', type=str, help='Path to the config.ini file')
-argParser = parser.parse_args()
-args =  Config(argParser.config_file)
+
+args =  Config(parser.parse_args().config_file)
 
 kwargs = args.__dict__
 
@@ -30,12 +30,7 @@ kwargs = args.__dict__
 #       Model
 ################################################################
 
-model_dict = {'NO': Lmodel,
-                'MLP': MLPmodel}
-
-Model = model_dict.get(args.model_name)
-
-model = Model(**kwargs)
+model = Lmodel(**kwargs)
 
 #################################################################
 #       Data
