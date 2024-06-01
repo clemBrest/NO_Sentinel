@@ -18,10 +18,16 @@ class Config:
 
         self.model_name = config.get('Model', 'model_name')
         self.learning_rate = config.getfloat('Training', 'learning_rate')
-        self.future = config.getint('Training', 'future')
+        if 'future' in config['Training']:
+            self.future = config.getint('Training', 'future')
+        else:
+            self.future = None
+        # self.remove_None()
 
-        self.remove_None()
-        self.set_loss_weights()
+        if 'LossWeights' in config.sections():
+            self.set_loss_weights()
+        else:
+            self.loss_weights = None
 
         self.saving_path = config.get('Training', 'saving_path')
         self.n_epochs = config.getint('Training', 'n_epochs')
@@ -29,21 +35,23 @@ class Config:
         self.batch_size = config.getint('Training', 'batch_size')
         self.n_train = config.getint('Training', 'n_train')
         self.size = config.getint('Training', 'size')
-        self.future = config.getint('Training', 'future')
 
         self.set_str_name()
 
     def remove_None(self):
-        for attr in self.__dict__:
-            if self.__dict__[attr] == None:
-                self.__dict__.pop(attr)
-    
+        # Create a list of keys that have None values
+        keys_to_remove = [k for k, v in self.__dict__.items() if v is None]
+
+        # Remove the keys from the dictionary
+        for key in keys_to_remove:
+            self.__dict__.pop(key)
+        
         
     def set_loss_weights(self):
         self.loss_weights = {}
         config = self.config
         for param in config.options('LossWeights'):
-            value = config.getfloat('LossWeights', param)
+            value = config.getfloat('LossWeights', param )
             if value != 0.0:
                 self.loss_weights[param] = value
 
@@ -61,38 +69,49 @@ class Config:
                 self.str_name = f"{self.model_name}_conv:{self.model.conv}_kernel:{self.model.kernel}_stride:{self.model.stride}_skip:{self.model.no_skip}_Res:{self.model.residual}_activation:{self.model.activation}lr:{self.learning_rate}_batch:{self.batch_size}"
         elif self.model_name == 'Koopman':
             self.str_name = f"{self.model_name}_{self.model.linear_dims}_{self.learning_rate}batch:{self.batch_size}"
-
-
+        elif self.model_name == 'MLP':
+            self.str_name = f"{self.model_name}_{self.model.PriorArch}_{self.model.activation}_{self.learning_rate}batch:{self.batch_size}"
 
 
 class ModelConfig:
     def __init__(self, config):
 
-        
-        self.Q_shape = [int(x) for x in config.get('Model', 'Q_shape').strip('[]').split(', ')]
-        self.P_shape = [int(x) for x in config.get('Model', 'P_shape').strip('[]').split(', ')]
+        try:
+            self.Q_shape = [int(x) for x in config.get('Model', 'Q_shape').strip('[]').split(', ')]
+            self.P_shape = [int(x) for x in config.get('Model', 'P_shape').strip('[]').split(', ')]
+        except:
+            print('Q_shape or P_shape not found')
+            self.Q_shape = None
+            self.P_shape = None
+
         self.no_skip = config.get('Model', 'no_skip', fallback=None)
         self.conv = config.get('Model', 'conv', fallback=None)
-        # self.n_ino = config.getint('Model', 'n_ino', fallback=None)
         self.residual = config.getboolean('Model', 'residual', fallback=False)
         self.size = config.getint('Training', 'size')
         self.activation = config.get('Model', 'activation', fallback='Linear')
+        if 'PriorArch' in config['Model']:
+            self.PriorArch = [int(x) for x in config.get('Model', 'PriorArch').strip('[]').split(', ')]
         
 
+        try:
+            if 'wavelet' in self.conv:
+                self.wavelet()
 
-        if 'wavelet' in self.conv:
-            self.wavelet()
-
-        elif 'fourier' in self.conv:
-            self.n_modes = config.getint('Model', 'n_modes')
-        
-        elif 'FilterConvolution' in self.conv:
-            self.kernel = [int(x) for x in config.get('Model', 'kernel').strip('[]').split(', ')]
-            self.stride = config.getint('Model', 'stride')
-            self.padding = config.get('Model', 'padding')
-            self.padding = 0 if self.padding == '0' else self.padding
-        else:
-            raise ValueError('Invalid convolution type')
+            elif 'fourier' in self.conv:
+                self.n_modes = config.getint('Model', 'n_modes')
+            
+            elif 'FilterConvolution' in self.conv:
+                self.kernel = [int(x) for x in config.get('Model', 'kernel').strip('[]').split(', ')]
+                self.stride = config.getint('Model', 'stride')
+                self.padding = config.get('Model', 'padding')
+                self.padding = 0 if self.padding == '0' else self.padding
+        except:
+            print('No conv found')
+            self.n_modes = None
+            self.level = None
+            self.kernel = None
+            self.stride = None
+            self.padding = None
 
 
         self.__dict__.pop('size')
@@ -115,10 +134,12 @@ class ModelConfig:
         self.n_modes = mode_data.shape[-1]
 
     def remove_None(self):
-        for attr in self.__dict__:
-            if self.__dict__[attr] == None:
-                self.__dict__.pop(attr)
+        # Create a list of keys that have None values
+        keys_to_remove = [k for k, v in self.__dict__.items() if v is None]
 
+        # Remove the keys from the dictionary
+        for key in keys_to_remove:
+            self.__dict__.pop(key)
 
 
 

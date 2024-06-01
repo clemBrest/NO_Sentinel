@@ -5,26 +5,78 @@ from pytorch_lightning.utilities.model_summary import ModelSummary, LayerSummary
 import sys
 from PDE_models.model import NO
 from ODE_models.Koopman_DeepOperatorNet import KoopmanAE, KoopmanDeepOperatorNet
+from ODE_models.PINN import Prior, PINN
 
 #%%
+class MLPmodel(L.LightningModule):
+    def __init__(self, **kwargs):
+        
+        super(MLPmodel, self).__init__()
+
+        self.save_hyperparameters()
+
+        self.learning_rate = kwargs['lr']
+        self.loss_weights = kwargs['loss_weights']
+        self.future = kwargs['future']
+        self.model_name = kwargs['model_name']
+        self.kwargs = kwargs
+
+        kwargs['PriorArch' ]= [3, 256, 1024, 256, 20] if 'PriorArch' not in kwargs.keys() else kwargs['PriorArch']
+        kwargs['activation'] = 'tanh' if 'activation' not in kwargs.keys() else kwargs['activation']
+        self.model = Prior( PriorArch = kwargs['PriorArch'] , 
+                 activation = kwargs['activation'] )
+
+    def forward(self, X ):
+        return self.model(X)
+    
+    def training_step(self, batch, batch_idx):
+
+        X, tar = batch['X'], batch['tar']
+        out = self(X)
+
+        self.loss = self.criterion(out, tar)
+
+        self.log('train_loss_total', self.loss, on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+
+        return self.loss
+    
+    def validation_step(self, batch, batch_idx):
+
+        X, tar = batch['X'], batch['tar']
+        out = self(X)
+
+        self.loss = self.criterion(out, tar)
+
+        self.log('eval_loss_total', self.loss, on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+
+        return self.loss
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        return [optimizer]
+    
+    @staticmethod
+    def criterion(x,y):
+        return torch.sqrt(torch.mean((x-y)**2))
+
 
 class Lmodel(L.LightningModule):
-    def __init__(self, model_name, lr , loss_weights ,future , **pmodel):
+    def __init__(self, **kwargs):
         
         super(Lmodel, self).__init__()
 
         self.save_hyperparameters()
 
-        self.set_model(model_name, **pmodel )
+        self.set_model(**kwargs )
 
-        self.learning_rate = lr
-        self.loss_weights = loss_weights
-        self.future = future
-        self.model_name = model_name
-        self.pmodel = pmodel
+        self.learning_rate = kwargs['lr']
+        self.loss_weights = kwargs['loss_weights']
+        self.future =  kwargs['future']
+        self.model_name = kwargs['model_name']
+        self.kwargs = kwargs
 
-    def set_model(self, model_name, **kwargs):
-        match model_name:
+    def set_model(self, **kwargs):
+        match self.model_name:
             case 'NO':
                 self.model = NO(**kwargs)
             case 'Koopman':
@@ -32,7 +84,7 @@ class Lmodel(L.LightningModule):
             case 'KoopmanDeepOperatorNet':
                 self.model = KoopmanDeepOperatorNet(**kwargs)
             case _:
-                raise ValueError(f'Model {model_name} not recognized')
+                raise ValueError(f'Model {self.model_name} not recognized')
 
     def forward(self, x, future ):
         return self.model(x, future)
@@ -139,7 +191,6 @@ class Lmodel(L.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=30)
         return [optimizer]
     
     @staticmethod
@@ -167,7 +218,7 @@ class Lmodel(L.LightningModule):
 if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    model = RecurentN0(n_modes=32 , 
+    model = Lmodel(n_modes=32 , 
                        P_shape = [20,64,8], 
                        Q_shape = [8,64,20], 
                        no_skip = 'linear',

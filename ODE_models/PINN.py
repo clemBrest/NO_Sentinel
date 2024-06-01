@@ -1,6 +1,6 @@
 import torch
 from torch import nn,  autograd
-from neuralKoopman import KoopmanAE
+from .neuralKoopman import KoopmanAE
 import torch.nn.functional as F
 import lightning as L
 import light.Lmodel as Lmodel
@@ -28,18 +28,15 @@ class Prior(nn.Module):
         for i in range(len(PriorArch)-1):
             self.layers.append(nn.Linear(PriorArch[i], PriorArch[i+1]))
 
-    def forward(self, x, y, t):
-        # Concatenate the inputs
-        inputs = torch.cat((x, y, t), dim=-1)
-
+    def forward(self, X):
         # Pass through MLP
-        U = inputs
+        U = X
         for i, layer in enumerate(self.layers):
             U = layer(U)
             if i != len(self.layers) - 1:  # Don't apply activation to last layer
-                U = torch.gelu(U)
+                U = self.activation(U)
 
-        return x
+        return U
 
 class PINN(L.LightningModule):
     def __init__(self, **pmodel):

@@ -60,6 +60,8 @@ class NO_Block(nn.Module):
         self.channels = pmodel['P_shape'][-1]   
         self.conv = pmodel['conv']
 
+        pmodel['activation'] = 'gelu' if 'activation' not in pmodel.keys() else pmodel['activation']
+
         if pmodel['activation'] == 'gelu':
             self.activation = F.gelu
         elif pmodel['activation'] == 'relu':

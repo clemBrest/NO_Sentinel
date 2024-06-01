@@ -3,7 +3,7 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 
-from utils.parser import Config
+from script.NO_Sentinel.utils.config import Config
 from light.Lmodel import Lmodel
 #%%
 

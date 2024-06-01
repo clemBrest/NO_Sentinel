@@ -103,7 +103,7 @@ class SentinelDataset(torch.utils.data.Dataset):
         tar = torch.cat((tar0, tar0 - tarm1), dim=1)
 
 
-        return {'x': inp.clone(), 'y': tar.clone()}
+        return {'inp': inp.clone(), 'tar': tar.clone()}
 
 
     

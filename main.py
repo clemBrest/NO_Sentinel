@@ -3,59 +3,57 @@ from torch.utils.data import DataLoader
 import lightning as L
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 from lightning.pytorch.loggers import TensorBoardLogger
-import sys
 
-# sys.path.append('/users/local/c23lacro/script')
+from datasets.sentinel_data import SentinelDataset as SentinelDatasetPDE
+from datasets.sentinel_data_for_mlp import SentinelDataset as SentinelDatasetMLP
+from datasets.sentinel_data_for_conv2d import SentinelDataset as SentinelDatasetLinConv
 
-from datasets.sentinel_data import SentinelDataset
-from utils.parser import Config
+import argparse
+
+from utils.config import Config
 from utils.writer import summary_file
-from light.Lmodel import Lmodel
+from light.Lmodel import Lmodel, MLPmodel
 
 #%%
 
 ###################################################################
 #       Arguments
 ###################################################################
+parser = argparse.ArgumentParser(description='Process a config.ini file.')
+parser.add_argument('config_file', type=str, help='Path to the config.ini file')
+argParser = parser.parse_args()
+args =  Config(argParser.config_file)
 
-args =  Config('config.ini')
-
-pmodel = args.model.__dict__
+kwargs = args.__dict__
 
 
 ################################################################
 #       Model
 ################################################################
 
-model = Lmodel(model_name = args.model_name,
-                lr =  args.learning_rate,
-                loss_weights = args.loss_weights,
-                future = args.future, 
-                **pmodel)
+model_dict = {'NO': Lmodel,
+                'MLP': MLPmodel}
 
-# #train from a checkpoint
-# model = RecurentN0.load_from_checkpoint(
-#     '/users/local/c23lacro/script/2005/runs/21051056/epoch=640-step=18589.ckpt')
+Model = model_dict.get(args.model_name)
 
+model = Model(**kwargs)
 
 #################################################################
 #       Data
 ################################################################
+data_dict = {'NO': SentinelDatasetPDE, 
+             'MLP': SentinelDatasetMLP,
+            'LinConv': SentinelDatasetLinConv
+             }
 
-train_data = SentinelDataset(path_data= args.path_data, 
-                             n_train= args.n_train, 
-                             size= args.size, 
-                             train = True,
-                             future= args.future)
+SentinelDataset = data_dict.get(args.model_name)
+
+train_data = SentinelDataset(**kwargs, train = True)
 
 train_loader = DataLoader(train_data, batch_size= args.batch_size, 
                           shuffle=True, num_workers=1, pin_memory=True)
 
-test_data = SentinelDataset(path_data= args.path_data,
-                            n_train= args.n_train, 
-                            size= args.size, 
-                            train = False,
-                            future= args.future)
+test_data = SentinelDataset(**kwargs, train = False)
 
 test_loader = DataLoader(test_data, batch_size=args.batch_size, 
                          shuffle=False, num_workers=1, pin_memory=True)
@@ -65,14 +63,14 @@ test_loader = DataLoader(test_data, batch_size=args.batch_size,
 ################################################################
 
 
-summary_file(args, model, train_data, test_data, args.str_name)
+summary_file(args, model, train_data, test_data)
 
 ################################################################
 #       Trainer
 ################################################################
 
 checkpoint_callback = ModelCheckpoint(
-    monitor='eval_loss_total',  # Nom de la métrique à utiliser pour sélectionner les meilleurs modèles
+    monitor='train_loss_total',  # Nom de la métrique à utiliser pour sélectionner les meilleurs modèles
     dirpath=args.saving_path +'/'+ args.str_name,  # Répertoire où enregistrer les modèles
     filename='{epoch}-{eval_loss_total:.2f}',
     save_top_k=3,  # Nombre de modèles à conserver
@@ -85,7 +83,7 @@ logger = TensorBoardLogger(args.saving_path +'/'+ args.str_name, name=None)
 
 
 trainer = L.Trainer(max_epochs=args.n_epochs,accelerator="gpu", 
-                    devices=[2], logger=logger, 
+                    devices=[0], logger=logger, 
                     callbacks=[checkpoint_callback],
                     log_every_n_steps=10)
 

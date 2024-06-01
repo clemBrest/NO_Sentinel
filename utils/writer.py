@@ -6,8 +6,9 @@ This module contains the function summary_file that writes a summary of the mode
 It also prints the summary to the console if print_flag is set to True.
 """
 
-def summary_file(args, Lmodel, train_data, test_data, str_name, print_flag=False):
+def summary_file(args, Lmodel, train_data, test_data, print_flag=False):
     # Ensure the saving directory exists
+    str_name = args.str_name
     os.makedirs(args.saving_path+'/'+ str_name , exist_ok=True)
 
     with open(args.saving_path + '/'+ str_name + '/model_summary.txt', 'w') as f:

@@ -23,6 +23,8 @@ class SentinelDataset(torch.utils.data.Dataset):
     def __init__(self,
                  train=True,
                  n_train=240,
+                 size=64,
+                 future=1,
                  path_data = '/users/local/c23lacro/data/Fontainebleau_interpolated_subdomain64.npy'):
       
         self.sentinel_data0 = np.load(path_data)
@@ -79,12 +81,13 @@ class SentinelDataset(torch.utils.data.Dataset):
 
         tar0 = (self.sentinel_data[t , :, i, j])
 
-        inp = torch.tensor([i, j, t])
+        inp = torch.tensor([i, j, t], dtype=torch.float32)
 
         tar = torch.cat((tar0, tar0 - tarm1), dim=0)
+        tar = tar.float()
 
 
-        return {'x': inp.clone(), 'y': tar.clone()}
+        return {'X': inp.clone(), 'tar': tar.clone()}
 
 
     
@@ -93,8 +96,9 @@ class SentinelDataset(torch.utils.data.Dataset):
 if __name__ == '__main__':
     Sdata = SentinelDataset()
 
-    print(Sdata[0]['x'].shape, Sdata[0]['y'].shape)
+    print(Sdata[0]['X'].shape, Sdata[0]['tar'].shape)
 
 
 
+# %%
 # %%
