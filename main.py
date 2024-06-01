@@ -4,14 +4,13 @@ import lightning as L
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 from lightning.pytorch.loggers import TensorBoardLogger
 
-from datasets.sentinel_data import SentinelDataset as SentinelDatasetPDE
-from datasets.sentinel_data_for_mlp import SentinelDataset as SentinelDatasetMLP
-from datasets.sentinel_data_for_conv2d import SentinelDataset as SentinelDatasetLinConv
-
+from datasets.sentinel_data import SentinelDataset
 import argparse
 
 from utils.config import Config
 from utils.writer import summary_file
+
+
 from light.Lmodel import Lmodel, MLPmodel
 
 #%%
@@ -41,12 +40,6 @@ model = Model(**kwargs)
 #################################################################
 #       Data
 ################################################################
-data_dict = {'NO': SentinelDatasetPDE, 
-             'MLP': SentinelDatasetMLP,
-            'LinConv': SentinelDatasetLinConv
-             }
-
-SentinelDataset = data_dict.get(args.model_name)
 
 train_data = SentinelDataset(**kwargs, train = True)
 
