@@ -1,0 +1,52 @@
+       Model Summary
+
+config: <configparser.ConfigParser object at 0x7fda0b0d7ee0>
+model: <parser.ModelConfig object at 0x7fd819cc5ed0>
+model_name: NO
+learning_rate: 0.0001
+future: 100
+loss_weights: {'reconstruction': 1.0, 'linear': 0.1, 'ortho_conv': 0.1, 'encode': 0.1}
+saving_path: runs/28051743
+n_epochs: 1000
+path_data: /users/local/c23lacro/data/Fontainebleau_interpolated_subdomain64.npy
+batch_size: 4
+n_train: 240
+size: 64
+str_name: NO_conv:FilterConvolution_kernel:[1, 1]_stride:1_skip:None_Res:False_activation:Linearlr:0.0001_batch:4
+
+  | Name  | Type | Params
+-------------------------------
+0 | model | NO   | 304 K 
+-------------------------------
+304 K     Trainable params
+0         Non-trainable params
+304 K     Total params
+1.219     Total estimated model params size (MB)
+
+NO(
+  (encoder): MLP(
+    (fcs): ModuleList(
+      (0): Conv2d(20, 512, kernel_size=(1, 1), stride=(1, 1))
+      (1): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1))
+      (2): Conv2d(256, 32, kernel_size=(1, 1), stride=(1, 1))
+    )
+  )
+  (one_step): NO_Block(
+    (activation): Identity()
+    (convs): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1))
+  )
+  (decoder): MLP(
+    (fcs): ModuleList(
+      (0): Conv2d(32, 512, kernel_size=(1, 1), stride=(1, 1))
+      (1): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1))
+      (2): Conv2d(256, 20, kernel_size=(1, 1), stride=(1, 1))
+    )
+  )
+)
+
+MLP: 150304 parameters
+NO_Block: 1056 parameters
+MLP: 153364 parameters
+
+Training data shape: 140
+Test data shape: 3

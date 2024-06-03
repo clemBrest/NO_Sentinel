@@ -1,0 +1,35 @@
+       Model Summary
+
+saving_path: experiments/MLP2
+n_epochs: 1000
+path_data: /users/local/c23lacro/data/Fontainebleau_interpolated_subdomain64.npy
+batch_size: 65536
+lr: 0.001
+n_train: 240
+model_name: MLP
+priorarch: [1, 256, 1024, 256, 10]
+activation: tanh
+str_name: saving_path:experiments/MLP2_n_epochs:1000_path_data:/users/local/c23lacro/data/Fontainebleau_interpolated_subdomain64.npy_batch_size:65536_lr:0.001_n_train:240_model_name:MLP_priorarch:[1, 256, 1024, 256, 10]_activation:tanh
+
+  | Name  | Type  | Params
+--------------------------------
+0 | model | Prior | 528 K 
+--------------------------------
+528 K     Trainable params
+0         Non-trainable params
+528 K     Total params
+2.115     Total estimated model params size (MB)
+
+Prior(
+  (layers): ModuleList(
+    (0): Linear(in_features=1, out_features=256, bias=True)
+    (1): Linear(in_features=256, out_features=1024, bias=True)
+    (2): Linear(in_features=1024, out_features=256, bias=True)
+    (3): Linear(in_features=256, out_features=10, bias=True)
+  )
+)
+
+ModuleList: 528650 parameters
+
+Training data shape: 983040
+Test data shape: 421888

@@ -1,7 +1,6 @@
 /runs/
 /__pycache__/
 /utils/config2.py
-/experiments/
 /ODE/__pycache__/
 /PDE/__pycache__/
 /utils/__pycache__/

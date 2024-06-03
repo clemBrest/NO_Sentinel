@@ -12,13 +12,14 @@ class NO_model(L.LightningModule):
         super(NO_model, self).__init__()
 
         self.save_hyperparameters()
+        self.model_name = kwargs['model_name']
+
 
         self.set_model(**kwargs )
 
         self.learning_rate = kwargs['lr']
         self.loss_weights = kwargs['loss_weights']
         self.future =  kwargs['future']
-        self.model_name = kwargs['model_name']
         self.kwargs = kwargs
 
     def set_model(self, **kwargs):

@@ -1,0 +1,23 @@
+P_shape:
+- 20
+- 512
+- 256
+- 32
+Q_shape:
+- 32
+- 512
+- 256
+- 20
+activation: gelu
+conv: fourier
+future: 100
+loss_weights:
+  encode: 0.1
+  linear: 0.1
+  ortho_conv: 0.1
+  reconstruction: 1.0
+lr: 0.0001
+model_name: 'NO'
+n_modes: 32
+no_skip: linear
+residual: true
