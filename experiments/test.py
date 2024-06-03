@@ -3,8 +3,10 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 
-from script.NO_Sentinel.utils.config import Config
-from light.Lmodel import Lmodel
+import sys
+sys.path.append('/users/local/c23lacro/script/NO_Sentinel/')
+from utils.config import Config
+from light.MLPmodel import MLP_model
 #%%
 
 ##################################################################
@@ -13,26 +15,7 @@ from light.Lmodel import Lmodel
 
 device = torch.device('cpu')
 
-args =  Config('config2.ini')
-
-class RecurentNO(Lmodel):
-    def __init__(self, model_name = 'NO', lr = 1e-4, loss_weights = {'reconstruction' : 0.1, 
-                                        'linear' : 0.1, 
-                                        'ortho_w' : 0,
-                                        'ortho_conv': 0.1,
-                                        'encode' : 0.1},
-                                        future = 100,
-                                        **pmodel):
-        
-        super(RecurentNO, self).__init__(model_name = model_name,
-                            lr =  lr,
-                            loss_weights = loss_weights,
-                            future = future, 
-                            **pmodel)
-
-
-
-lightning_model = RecurentNO.load_from_checkpoint('/users/local/c23lacro/script/NO_Sentinel/runs/28051743/wavelet_res_linearSkip_lr1em4/epoch=993-val_loss=0.00.ckpt').to(device)
+lightning_model = MLP_model.load_from_checkpoint('/users/local/c23lacro/script/NO_Sentinel/experiments/MLP2/saving_path:experiments/MLP2_n_epochs:1000_path_data:/users/local/c23lacro/data/Fontainebleau_interpolated_subdomain64.npy_batch_size:65536_lr:0.001_n_train:240_model_name:MLP_priorarch:[3, 256, 1024, 256, 10]_activation:tanh/epoch=994-eval_loss_total=0.01.ckpt').to(device)
 
 lightning_model.eval()
 
@@ -47,15 +30,19 @@ path_data = '/users/local/c23lacro/data/Fontainebleau_interpolated_subdomain64.n
 sentinel_data = np.load(path_data)
 
 if np.max(sentinel_data) > 1:
-    sentinel_data /= np.max(sentinel_data)
+    sentinel_data = (sentinel_data - np.min(sentinel_data)) / (np.max(sentinel_data) - np.min(sentinel_data))
+    # sentinel_data /= np.max(sentinel_data)
 
+sentinel_data = torch.tensor(sentinel_data).float()
 
-sentinel_data_diff = sentinel_data[1:,...] - sentinel_data[:-1,...]
+#%%
 
-sentinel_data = torch.tensor(np.append( sentinel_data[1:,...],sentinel_data_diff, axis=1)).float()
+x = torch.arange(0, sentinel_data.shape[-2]).float()
+y = torch.arange(0, sentinel_data.shape[-1]).float()
+t = torch.arange(0, sentinel_data.shape[0]).float()
 
-if args.model_name == 'Koopman_DeepOperatorNet' or args.model_name == 'KoopmanAE':
-    sentinel_data = sentinel_data.reshape(342,20,-1).permute(2,0,1)
+T, X, Y = torch.meshgrid(t, x, y)
+X, Y, T =  X.flatten(), Y.flatten(), T.flatten()
 
 #%%
 
@@ -63,15 +50,18 @@ if args.model_name == 'Koopman_DeepOperatorNet' or args.model_name == 'KoopmanAE
 #       Prediction
 ##################################################################
 
-i_image0 = 0
+prediction = lightning_model(torch.stack((X, Y, T), dim=1))
+prediction.shape
 
-image0 = sentinel_data[i_image0].unsqueeze(0).to(device)
-
-out,_ = lightning_model(image0,sentinel_data.shape[0]-i_image0)
-out = out.squeeze(0)
-
+prediction = prediction.reshape(sentinel_data.shape)
+prediction.shape
 #%%
-sentinel_data.shape, image0.shape, out.shape
+channel = 4
+i = 63
+j = 63
+plt.plot(prediction.detach().numpy()[:,channel,i,j], label='prediction')
+plt.plot(sentinel_data.detach().numpy()[:,channel,i,j], label='sentinel')
+plt.legend()
 
 #%%
 
@@ -79,15 +69,15 @@ sentinel_data.shape, image0.shape, out.shape
 #       Metrics
 ##################################################################
 
-mse_model = torch.sqrt(torch.mean((out-sentinel_data)**2, dim = (-3,-2,-1)))
-mse_persistance = torch.sqrt(torch.mean((sentinel_data - image0)**2, dim = (-3,-2,-1)))
+mse_model = torch.sqrt(torch.mean((prediction-sentinel_data)**2, dim = (-3,-2,-1)))
+mse_persistance = torch.sqrt(torch.mean((sentinel_data)**2, dim = (-3,-2,-1)))
 
 pixx ,pixy = 20, 20
 channel = 5
-pixel_predict = out[...,pixx,pixy].detach().cpu().numpy()
+pixel_predict = prediction[...,pixx,pixy].detach().cpu().numpy()
 pixel_sentinel = sentinel_data[...,pixx,pixy].detach().cpu().numpy()
 #%%
-rmse_map = torch.sqrt(torch.mean((out-sentinel_data)**2, dim = 1))
+rmse_map = torch.sqrt(torch.mean((prediction-sentinel_data)**2, dim = 1))
 rmse_map.shape
 
 #%%
@@ -120,11 +110,11 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 fig, axs = plt.subplots(1, 2)  # Create 2 subplots side by side
-=
-# Create the initial frames
-im1 = axs[0].imshow(sentinel_data[i_image0].detach().numpy()[[2,1,0],...].T*3 , animated=True)
 
-im2 = axs[1].imshow(rmse_map[i_image0].detach().numpy().T, animated=True, vmin=0, vmax=0.1)
+# Create the initial frames
+im1 = axs[0].imshow(sentinel_data[0].detach().numpy()[[2,1,0],...].T*3 , animated=True)
+
+im2 = axs[1].imshow(rmse_map[0].detach().numpy().T, animated=True, vmin=0, vmax=0.1)
 
 
 # Create new axes for the colorbars that are adjacent to the original axes
