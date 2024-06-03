@@ -26,7 +26,7 @@ class KoopmanAE(nn.Module):
         # Decoder layers
         self.decoder = Decoder(self.input_dim, self.linear_dims)
 
-        self.conv = nn.Conv2d(self.linear_dims,self.linear_dims, kernel_size=pmodel['kernel'], stride=1, padding=0)
+        self.conv = nn.Conv2d(self.linear_dims,self.linear_dims, kernel_size=pmodel['kernel'], stride=1)
 
     def one_step_ahead(self, x):
         """Predict one-step-ahead in the latent space using the Koopman operator."""
