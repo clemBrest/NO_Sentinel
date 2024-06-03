@@ -16,7 +16,9 @@ class Config:
         for section in config.sections():
             for key in config[section]:
                 argument = config[section][key]
+
                 type_arg = self.check_type(argument)
+
                 match type_arg:
                     case 'int':
                         setattr(self, key, config.getint(section, key))
@@ -73,21 +75,23 @@ class Config:
     @staticmethod
     def check_type(key):
         try:
-            float(key)
-            return 'float'
-        except:
-            pass
-        try:
             int(key)
             return 'int'
         except:
             pass
+        try:
+            float(key)
+            return 'float'
+        except:
+            pass
         if key.lower() == 'true' or key.lower() == 'false':
             return 'bool'
-        if '{' in key:
+        elif '{' in key:
             return 'dict'
-        if '[' in key:
+        elif '[' in key:
             return 'list'
+        else :
+            return 'str'
         
 #%%
 

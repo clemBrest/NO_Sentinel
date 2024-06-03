@@ -7,26 +7,24 @@ import light.Lmodel as Lmodel
 
 
 class Prior(nn.Module):
-    def __init__(self, PriorArch = [3,256,1024,256,20], 
-                 activation = 'tanh'):
+    def __init__(self, **kwargs):
         """
         MLP with a specified architecture, for instance pmodel = [3,256,1024,256,20]
         """
         super(Prior, self).__init__()
 
-        self.PrioArch = PriorArch
-        self.activation = activation
+        self.PriorArch = kwargs['priorarch']
 
-        if activation == 'gelu':
+        if kwargs['activation'] == 'gelu':
             self.activation = F.gelu
-        elif activation == 'relu':
+        elif kwargs['activation'] == 'relu':
             self.activation = F.relu
-        elif activation == 'tanh':
+        elif kwargs['activation'] == 'tanh':
             self.activation = F.tanh
 
         self.layers = nn.ModuleList()
-        for i in range(len(PriorArch)-1):
-            self.layers.append(nn.Linear(PriorArch[i], PriorArch[i+1]))
+        for i in range(len(self.PriorArch)-1):
+            self.layers.append(nn.Linear(self.PriorArch[i], self.PriorArch[i+1]))
 
     def forward(self, X):
         # Pass through MLP

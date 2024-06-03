@@ -11,15 +11,9 @@ class MLP_model(L.LightningModule):
         self.save_hyperparameters()
 
         self.learning_rate = kwargs['lr']
-        self.loss_weights = kwargs['loss_weights']
-        self.future = kwargs['future']
-        self.model_name = kwargs['model_name']
         self.kwargs = kwargs
 
-        kwargs['PriorArch' ]= [3, 256, 1024, 256, 20] if 'PriorArch' not in kwargs.keys() else kwargs['PriorArch']
-        kwargs['activation'] = 'tanh' if 'activation' not in kwargs.keys() else kwargs['activation']
-        self.model = Prior( PriorArch = kwargs['PriorArch'] , 
-                 activation = kwargs['activation'] )
+        self.model = Prior( **kwargs )
 
     def forward(self, X ):
         return self.model(X)
@@ -52,4 +46,4 @@ class MLP_model(L.LightningModule):
     
     @staticmethod
     def criterion(x,y):
-        return torch.sqrt(torch.mean((x-y)**2))
+        return torch.mean((x-y)**2)

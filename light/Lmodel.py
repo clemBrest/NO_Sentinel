@@ -1,7 +1,7 @@
-from .Lmodel import NO_model
+from .NOmodel import NO_model
 from .MLPmodel import MLP_model
 
-def Lmodel(train, **kwargs):
+def Lmodel( **kwargs):
     data_dict = {'NO': NO_model, 
              'MLP': MLP_model
              }

@@ -22,22 +22,30 @@ class SentinelDataset(torch.utils.data.Dataset):
 
     def __init__(self,
                  train=True,
-                 n_train=240,
-                 size=64,
-                 future=1,
-                 path_data = '/users/local/c23lacro/data/Fontainebleau_interpolated_subdomain64.npy'):
+                 **kwargs):
       
-        self.sentinel_data0 = np.load(path_data)
+        self.kwargs = kwargs
+
+        self.sentinel_data0 = np.load(kwargs['path_data'])
 
         # We rescale the data to values between 0 and 1
 
-        self.max = np.max(self.sentinel_data0)
+        max = np.max(self.sentinel_data0)
+        min = np.min(self.sentinel_data0)
         if np.max(self.sentinel_data0) > 1:
-            self.sentinel_data0 /= self.max
+            self.sentinel_data0 = (self.sentinel_data0 - min) / (max - min)
+
+            # self.sentinel_data0 /= self.max
+
+        if 'pixel' in kwargs.keys():
+            # self.sentinel_data0 = self.sentinel_data0[...,kwargs['pixel'][0],kwargs['pixel'][1]]
+            self.pixel = kwargs['pixel']
+            print('pixel')
+        if 'time_step' in kwargs.keys():
+            self.sentinel_data0 = self.sentinel_data0[:kwargs['time_steps']]
             
-        self.n_train = n_train
-        
-        #TRASFORM TO TORCH
+        self.n_train = kwargs['n_train']
+
         self.train = train
         if self.train: 
             self.set_to_train()
@@ -45,9 +53,6 @@ class SentinelDataset(torch.utils.data.Dataset):
             self.set_to_eval()
 
         self.shape = self.sentinel_data.shape
-
-        self.min = torch.min(self.sentinel_data)
-        self.max = torch.max(self.sentinel_data)
 
     def set_to_eval(self):
         self.sentinel_data = torch.tensor(self.sentinel_data0).float()[self.n_train:,...]
@@ -74,20 +79,28 @@ class SentinelDataset(torch.utils.data.Dataset):
         i_pixel = index // self.shape[0] 
         i,j = int(i_pixel // (self.shape[-1])), int(i_pixel % (self.shape[-1]))
 
-        t = 1 if t == 0 else t
+        # t = 1 if t == 0 else t
+
+        inp = torch.tensor([i, j, t], dtype=torch.float32)
+
+        if 'pixel' in self.kwargs.keys():
+            i,j = self.pixel
+            inp = torch.tensor([t], dtype=torch.float32)
+
+
+        
 
 
         tarm1 = (self.sentinel_data[t-1, :,i, j])
 
         tar0 = (self.sentinel_data[t , :, i, j])
 
-        inp = torch.tensor([i, j, t], dtype=torch.float32)
 
         tar = torch.cat((tar0, tar0 - tarm1), dim=0)
         tar = tar.float()
 
 
-        return {'X': inp.clone(), 'tar': tar.clone()}
+        return {'X': inp.clone(), 'tar': tar0.float().clone()}
 
 
     
@@ -100,5 +113,4 @@ if __name__ == '__main__':
 
 
 
-# %%
 # %%
