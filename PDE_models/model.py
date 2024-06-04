@@ -43,6 +43,10 @@ class NO(nn.Module):
 
             phis.append(self.one_step(phis[-1]))
 
+            ## tag for residual connection maybe an error
+
+            
+
             if self.pmodel['residual']:
                 x_advanceds.append(self.decoder(phis[-1] + phis[0]))
             else:

@@ -84,7 +84,7 @@ class Config:
             return 'float'
         except:
             pass
-        if key.lower() == 'true' or key.lower() == 'false':
+        if key == 'True' or key == 'False':
             return 'bool'
         elif '{' in key:
             return 'dict'

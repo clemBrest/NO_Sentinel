@@ -2,6 +2,10 @@ import torch
 from torch import nn,  autograd
 from .neuralKoopman import KoopmanAE
 import torch.nn.functional as F
+
+import sys
+sys.path.append('/users/local/c23lacro/script/Koopman_DeepOperatorNet/')
+from Lmodel import LKoopman
 # import lightning as L
 # import light.Lmodel as Lmodel
 
@@ -46,8 +50,12 @@ class Prior(nn.Module):
 #         super(PINN, self).__init__()
 
 #         self.future = pmodel['future']
-#         self.model = Lmodel.Lmodel(model_name = 'KoopmanAE', **pmodel)
-#         self.model = KoopmanAE(pmodel['input_dim'], pmodel['linear_dims'])
+
+#         if 'CKPT_PATH' in pmodel.keys():
+#             model_koop = LKoopman.load_from_checkpoint(pmodel['CKPT_PATH'])
+#         else :
+#             self.model = KoopmanAE(pmodel['input_dim'], pmodel['linear_dims'])
+            
     
 #         self.Prior = Prior(pmodel['PriorArch'])
 
