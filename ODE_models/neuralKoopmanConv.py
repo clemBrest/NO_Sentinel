@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class KoopmanAE(nn.Module):
+class KoopmanConv(nn.Module):
     def __init__(self, **pmodel):
         """
         Koopman Autoencoder class, comprising an auto-encoder and a Koopman matrix.
@@ -13,7 +13,7 @@ class KoopmanAE(nn.Module):
             linear_dims (list): List of linear layer dimensions.
             device (str, optional): Device to run the model on (default: 'cpu').
         """
-        super(KoopmanAE, self).__init__()
+        super(KoopmanConv, self).__init__()
     
         self.input_dim = pmodel['input_dim']
         self.linear_dims = pmodel['linear_dims']
@@ -26,14 +26,14 @@ class KoopmanAE(nn.Module):
         # Decoder layers
         self.decoder = Decoder(self.input_dim, self.linear_dims)
 
-        self.conv = nn.Conv2d(self.linear_dims,self.linear_dims, kernel_size=pmodel['kernel'], stride=1)
+        self.conv = nn.Conv2d(self.latent_dim,self.latent_dim, kernel_size=pmodel['kernel_size'], stride=1)
 
     def one_step_ahead(self, x):
         """Predict one-step-ahead in the latent space using the Koopman operator."""
         return self.conv(x)
 
 
-    def forward(self, x):
+    def forward(self, x, n):
         """
         Perform forward pass through the model.
 
@@ -45,10 +45,11 @@ class KoopmanAE(nn.Module):
             phi (torch.Tensor): Encoded input state.
             phi_advanced (torch.Tensor): Encoded input state advanced by one time step.
         """
-        phi = self.encoder(x)
-        phi_advanced = self.one_step_ahead(phi)
-        x_advanced = self.decoder(phi_advanced)
-        return x_advanced, phi, phi_advanced
+        # phi = self.encoder(x)
+        # phi_advanced = self.one_step_ahead(phi)
+        # x_advanced = self.decoder(phi_advanced)
+        # return x_advanced, phi, phi_advanced
+        return self.forward_n_remember(x,n)
 
     def forward_n(self, x, n):
         """

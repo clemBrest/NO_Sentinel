@@ -26,11 +26,11 @@ class NO(nn.Module):
 
         self.pmodel = pmodel
 
-        self.encoder = MLP(pmodel['P_shape'])
+        self.encoder = MLP(shape = pmodel['P_shape'])
 
         self.one_step = NO_Block(**pmodel)
         
-        self.decoder = MLP(pmodel['Q_shape'])
+        self.decoder = MLP(shape = pmodel['Q_shape'])
     
     def forward(self, x, n=1):
             

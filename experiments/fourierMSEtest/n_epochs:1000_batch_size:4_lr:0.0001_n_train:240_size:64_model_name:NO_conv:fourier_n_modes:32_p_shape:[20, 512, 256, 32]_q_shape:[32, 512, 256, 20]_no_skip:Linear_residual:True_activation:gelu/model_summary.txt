@@ -1,0 +1,56 @@
+       Model Summary
+
+saving_path: /users/local/c23lacro/script/NO_Sentinel/experiments/fourierMSEtest/
+n_epochs: 1000
+path_data: /users/local/c23lacro/data/Fontainebleau_interpolated_subdomain64.npy
+batch_size: 4
+lr: 0.0001
+n_train: 240
+size: 64
+future: 100
+model_name: NO
+conv: fourier
+n_modes: 32
+p_shape: [20, 512, 256, 32]
+q_shape: [32, 512, 256, 20]
+no_skip: Linear
+residual: True
+activation: gelu
+loss_weights: {'reconstruction': 1.0, 'linear': 0.1, 'ortho_conv': 0.1, 'encode': 0.1}
+str_name: n_epochs:1000_batch_size:4_lr:0.0001_n_train:240_size:64_model_name:NO_conv:fourier_n_modes:32_p_shape:[20, 512, 256, 32]_q_shape:[32, 512, 256, 20]_no_skip:Linear_residual:True_activation:gelu
+
+  | Name  | Type | Params
+-------------------------------
+0 | model | NO   | 2.4 M 
+-------------------------------
+2.4 M     Trainable params
+0         Non-trainable params
+2.4 M     Total params
+9.603     Total estimated model params size (MB)
+
+NO(
+  (encoder): MLP(
+    (fcs): ModuleList(
+      (0): Conv2d(20, 512, kernel_size=(1, 1), stride=(1, 1))
+      (1): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1))
+      (2): Conv2d(256, 32, kernel_size=(1, 1), stride=(1, 1))
+    )
+  )
+  (one_step): NO_Block(
+    (convs): SpectralConv()
+  )
+  (decoder): MLP(
+    (fcs): ModuleList(
+      (0): Conv2d(32, 512, kernel_size=(1, 1), stride=(1, 1))
+      (1): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1))
+      (2): Conv2d(256, 20, kernel_size=(1, 1), stride=(1, 1))
+    )
+  )
+)
+
+MLP: 150304 parameters
+NO_Block: 2097152 parameters
+MLP: 153364 parameters
+
+Training data shape: 140
+Test data shape: 3

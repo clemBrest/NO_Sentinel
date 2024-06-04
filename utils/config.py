@@ -36,7 +36,7 @@ class Config:
                     case 'dict':
                         item = config.get(section, key).strip('{}').split(', ')
                         setattr(self, key,
-                                {x.split(':')[0]: float(x.split(':')[1]) for x in item}
+                                {str(x.split(':')[0]).strip('\"\"'): float(x.split(':')[1]) for x in item}
                                 )
                     case _:
                         print('key:', key)
@@ -67,7 +67,7 @@ class Config:
     def set_str_name(self):
         str_name = ''
         for key in self.__dict__.keys():
-            if key != 'future':
+            if key != 'future' and key != 'saving_path' and key != 'path_data' and key != 'loss_weights':
                 str_name += f"{key}:{self.__dict__[key]}_"
         str_name = str_name[:-1]
         self.str_name = str_name

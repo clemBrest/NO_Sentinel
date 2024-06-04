@@ -5,6 +5,7 @@ from pytorch_lightning.utilities.model_summary import ModelSummary, LayerSummary
 import sys
 from PDE_models.model import NO
 from ODE_models.Koopman_DeepOperatorNet import KoopmanAE, KoopmanDeepOperatorNet
+from ODE_models.neuralKoopmanConv import KoopmanConv
 
 class NO_model(L.LightningModule):
     def __init__(self, **kwargs):
@@ -30,6 +31,8 @@ class NO_model(L.LightningModule):
                 self.model = KoopmanAE(**kwargs)
             case 'KoopmanDeepOperatorNet':
                 self.model = KoopmanDeepOperatorNet(**kwargs)
+            case 'LinConv':
+                self.model = KoopmanConv(**kwargs)
             case _:
                 raise ValueError(f'Model {self.model_name} not recognized')
 
@@ -40,7 +43,7 @@ class NO_model(L.LightningModule):
     def compute_loss(self, x_hat, phi_hat, batch):
 
 
-        inp, tar = batch['x'], batch['y']
+        inp, tar = batch['inp'], batch['tar']
 
         self.losses = {}
         
@@ -110,7 +113,7 @@ class NO_model(L.LightningModule):
 
     def training_step(self, batch, batch_idx):
 
-        inp = batch['x']
+        inp = batch['inp']
         # outputs = self(inputs, self.future, targets)
         x_hat, phi_hat = self(inp, self.future)
 
@@ -124,7 +127,7 @@ class NO_model(L.LightningModule):
 
     def validation_step(self, batch, batch_idx):
 
-        inp = batch['x']
+        inp = batch['inp']
         # outputs = self(inputs, self.future, targets)
         x_hat, phi_hat = self(inp, self.future)
 
@@ -142,7 +145,8 @@ class NO_model(L.LightningModule):
     
     @staticmethod
     def criterion(x,y):
-        return torch.sqrt(torch.mean((x-y)**2))
+        # return torch.sqrt(torch.mean((x-y)**2))
+        return torch.mean((x-y)**2)
     
     @staticmethod
     def criterion_exp(x,y,a=0):

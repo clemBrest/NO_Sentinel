@@ -1,0 +1,35 @@
+activation: gelu
+batch_size: 4
+conv: filter_convolution
+future: 100
+kernel:
+- 3
+- 3
+loss_weights:
+  encode: 0.1
+  linear: 0.1
+  ortho_conv: 0.1
+  reconstruction: 1.0
+lr: 0.0001
+model_name: 'NO'
+n_epochs: 1000
+n_train: 240
+no_skip: linear
+p_shape:
+- 20
+- 512
+- 256
+- 32
+padding: same
+path_data: /users/local/c23lacro/data/Fontainebleau_interpolated_subdomain64.npy
+q_shape:
+- 32
+- 512
+- 256
+- 20
+residual: true
+saving_path: /users/local/c23lacro/script/NO_Sentinel/experiments/MSE_test
+size: 64
+str_name: n_epochs:1000_batch_size:4_lr:0.0001_n_train:240_size:64_model_name:NO_conv:filter_convolution_stride:1_padding:same_kernel:[3,
+  3]_p_shape:[20, 512, 256, 32]_q_shape:[32, 512, 256, 20]_no_skip:linear_residual:True_activation:gelu
+stride: 1

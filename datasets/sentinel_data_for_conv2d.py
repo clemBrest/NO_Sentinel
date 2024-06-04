@@ -20,26 +20,24 @@ The class has two modes: train and eval. In train mode, the data is loaded from 
 class SentinelDataset(torch.utils.data.Dataset):
     """Custom Dataset class for PDE training data"""
 
-    def __init__(self,
-                 train=True,
-                 n_train=240,
-                 future = 100,
-                 kernel_size=3,
-                 path_data = '/users/local/c23lacro/data/Fontainebleau_interpolated_subdomain64.npy'):
+    def __init__(self, train=True,**kwargs):
+        
+        self.n_train = kwargs['n_train']
+        self.future = kwargs['future']
+        self.kernel_size = kwargs['kernel_size']
+        self.path_data = kwargs['path_data']
+
+        self.train = train
       
-        self.sentinel_data0 = np.load(path_data)
+        self.sentinel_data0 = np.load(self.path_data)
 
         # We rescale the data to values between 0 and 1
 
         self.max = np.max(self.sentinel_data0)
+        self.min = np.min(self.sentinel_data0)
         if np.max(self.sentinel_data0) > 1:
-            self.sentinel_data0 /= self.max
+            self.sentinel_data0 = (self.sentinel_data0 - self.min) / (self.max - self.min)
 
-        self.kernel_size = kernel_size
-        self.future = future
-            
-        self.n_train = n_train
-        
         #TRASFORM TO TORCH
         self.train = train
         if self.train: 
@@ -61,7 +59,9 @@ class SentinelDataset(torch.utils.data.Dataset):
 
 
     def __len__(self):
-        return self.shape[0] *(self.shape[-1]- self.kernel_size +1)*(self.shape[-2]- self.kernel_size +1)
+        return ((self.shape[0]-self.future) 
+        *(self.shape[-1]- self.kernel_size +1)
+        *(self.shape[-2]- self.kernel_size +1))
 
     def __getitem__(self, index):
         """Get item method for PyTorch Dataset class"""
@@ -73,8 +73,8 @@ class SentinelDataset(torch.utils.data.Dataset):
 
 
         #get the subdomain index and the patch index and i,j position of the patch
-        t = index % self.shape[0]
-        i_pixel = index // self.shape[0] 
+        t = index % (self.shape[0]-self.future)
+        i_pixel = index // (self.shape[0]-self.future)
         i,j = int(i_pixel // (self.shape[-1])), int(i_pixel % (self.shape[-1]))
 
         t = 1 if t == 0 else t
@@ -99,6 +99,7 @@ class SentinelDataset(torch.utils.data.Dataset):
 
         tar0 = (self.sentinel_data[tar_index , :, i, j])
 
+
         inp = torch.cat((inp0, inp0 - inpm1), dim=0)
         tar = torch.cat((tar0, tar0 - tarm1), dim=1)
 
@@ -110,9 +111,9 @@ class SentinelDataset(torch.utils.data.Dataset):
 # %%
 
 if __name__ == '__main__':
-    Sdata = SentinelDataset()
+    Sdata = SentinelDataset(train=True, **{'n_train': 240, 'future': 100, 'kernel_size': 3, 'path_data': '/users/local/c23lacro/data/Fontainebleau_interpolated_subdomain64.npy'})
 
-    print(Sdata[0]['x'].shape, Sdata[0]['y'].shape)
+    print(Sdata[0]['inp'].shape, Sdata[0]['tar'].shape)
 
 
 

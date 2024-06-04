@@ -1,0 +1,31 @@
+activation: gelu
+batch_size: 4
+conv: fourier
+future: 100
+loss_weights:
+  encode: 0.1
+  linear: 0.1
+  ortho_conv: 0.1
+  reconstruction: 1.0
+lr: 0.0001
+model_name: 'NO'
+n_epochs: 1000
+n_modes: 32
+n_train: 240
+no_skip: Linear
+p_shape:
+- 20
+- 512
+- 256
+- 32
+path_data: /users/local/c23lacro/data/Fontainebleau_interpolated_subdomain64.npy
+q_shape:
+- 32
+- 512
+- 256
+- 20
+residual: true
+saving_path: /users/local/c23lacro/script/NO_Sentinel/experiments/fourierMSEtest/
+size: 64
+str_name: n_epochs:1000_batch_size:4_lr:0.0001_n_train:240_size:64_model_name:NO_conv:fourier_n_modes:32_p_shape:[20,
+  512, 256, 32]_q_shape:[32, 512, 256, 20]_no_skip:Linear_residual:True_activation:gelu

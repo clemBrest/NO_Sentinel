@@ -1,0 +1,59 @@
+       Model Summary
+
+saving_path: /users/local/c23lacro/script/NO_Sentinel/experiments/MSE_test
+n_epochs: 1000
+path_data: /users/local/c23lacro/data/Fontainebleau_interpolated_subdomain64.npy
+batch_size: 4
+lr: 0.0001
+n_train: 240
+size: 64
+future: 100
+model_name: NO
+conv: filter_convolution
+stride: 1
+padding: same
+kernel: [3, 3]
+p_shape: [20, 512, 256, 32]
+q_shape: [32, 512, 256, 20]
+no_skip: linear
+residual: True
+activation: gelu
+loss_weights: {'reconstruction': 1.0, 'linear': 0.1, 'ortho_conv': 0.1, 'encode': 0.1}
+str_name: n_epochs:1000_batch_size:4_lr:0.0001_n_train:240_size:64_model_name:NO_conv:filter_convolution_stride:1_padding:same_kernel:[3, 3]_p_shape:[20, 512, 256, 32]_q_shape:[32, 512, 256, 20]_no_skip:linear_residual:True_activation:gelu
+
+  | Name  | Type | Params
+-------------------------------
+0 | model | NO   | 313 K 
+-------------------------------
+313 K     Trainable params
+0         Non-trainable params
+313 K     Total params
+1.256     Total estimated model params size (MB)
+
+NO(
+  (encoder): MLP(
+    (fcs): ModuleList(
+      (0): Conv2d(20, 512, kernel_size=(1, 1), stride=(1, 1))
+      (1): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1))
+      (2): Conv2d(256, 32, kernel_size=(1, 1), stride=(1, 1))
+    )
+  )
+  (one_step): NO_Block(
+    (convs): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=same)
+    (skip): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1))
+  )
+  (decoder): MLP(
+    (fcs): ModuleList(
+      (0): Conv2d(32, 512, kernel_size=(1, 1), stride=(1, 1))
+      (1): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1))
+      (2): Conv2d(256, 20, kernel_size=(1, 1), stride=(1, 1))
+    )
+  )
+)
+
+MLP: 150304 parameters
+NO_Block: 10304 parameters
+MLP: 153364 parameters
+
+Training data shape: 140
+Test data shape: 3

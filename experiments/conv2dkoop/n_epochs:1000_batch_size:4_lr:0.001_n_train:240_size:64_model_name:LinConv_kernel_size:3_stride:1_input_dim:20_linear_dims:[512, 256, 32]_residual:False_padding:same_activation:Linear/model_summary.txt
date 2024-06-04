@@ -1,0 +1,54 @@
+       Model Summary
+
+saving_path: /users/local/c23lacro/script/NO_Sentinel/experiments/conv2dkoop
+n_epochs: 1000
+path_data: /users/local/c23lacro/data/Fontainebleau_interpolated_subdomain64.npy
+batch_size: 4
+lr: 0.001
+n_train: 240
+size: 64
+future: 100
+model_name: LinConv
+kernel_size: 3
+stride: 1
+input_dim: 20
+linear_dims: [512, 256, 32]
+residual: False
+padding: same
+activation: Linear
+loss_weights: {"'reconstruction'": 1.0, "'linear'": 0.1, "'ortho_conv'": 0.1, "'encode'": 0.1}
+str_name: n_epochs:1000_batch_size:4_lr:0.001_n_train:240_size:64_model_name:LinConv_kernel_size:3_stride:1_input_dim:20_linear_dims:[512, 256, 32]_residual:False_padding:same_activation:Linear
+
+  | Name  | Type        | Params
+--------------------------------------
+0 | model | KoopmanConv | 309 K 
+--------------------------------------
+309 K     Trainable params
+0         Non-trainable params
+309 K     Total params
+1.239     Total estimated model params size (MB)
+
+KoopmanConv(
+  (encoder): Encoder(
+    (encoder): ModuleList(
+      (0): Linear(in_features=20, out_features=512, bias=True)
+      (1): Linear(in_features=512, out_features=256, bias=True)
+      (2): Linear(in_features=256, out_features=32, bias=True)
+    )
+  )
+  (decoder): Decoder(
+    (decoder): ModuleList(
+      (0): Linear(in_features=32, out_features=256, bias=True)
+      (1): Linear(in_features=256, out_features=512, bias=True)
+      (2): Linear(in_features=512, out_features=20, bias=True)
+    )
+  )
+  (conv): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1))
+)
+
+Encoder: 150304 parameters
+Decoder: 150292 parameters
+Conv2d: 9248 parameters
+
+Training data shape: 538160
+Test data shape: 11532

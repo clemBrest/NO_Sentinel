@@ -25,33 +25,22 @@ The class has two modes: train and eval. In train mode, the data is loaded from 
 class SentinelDataset(torch.utils.data.Dataset):
     """Custom Dataset class for PDE training data"""
 
-    def __init__(self,device=torch.device('cpu'), 
-                 train=True,
-                 n_train=240,
-                 size = 128,
-                 future = 10,
-                 path_data = '/users/local/c23lacro/data/Fontainebleau_interpolated_subdomain64.npy',
-                 missing_data = False):
+    def __init__(self,train=True, **kwargs):
         
-        # print('Class to load the Sentinel data')
 
-        # #print of path of the current script
-        # print('     Path of the current script')
-        # print( sys.path[0])
-
-        # print('     Loading sentinel data')
-        self.sentinel_data0 = np.load(path_data)
+        self.sentinel_data0 = np.load(kwargs['path_data'])
 
         # We rescale the data to values between 0 and 1
 
         self.max = np.max(self.sentinel_data0)
+        self.min = np.min(self.sentinel_data0)
         if np.max(self.sentinel_data0) > 1:
-            self.sentinel_data0 /= self.max
+            self.sentinel_data0 = (self.sentinel_data0 - self.min) / (self.max - self.min)
             
-        self.future = future
-        self.size = size
-        self.n_train = n_train
-        self.missing_data = missing_data
+        self.future = kwargs['future']
+        self.size = kwargs['size']
+        self.n_train = kwargs['n_train']
+        self.missing_data = kwargs['missing_data'] if 'missing_data' in kwargs.keys() else False
 
         
         #TRASFORM TO TORCH
@@ -63,10 +52,6 @@ class SentinelDataset(torch.utils.data.Dataset):
 
         self.shape = self.sentinel_data.shape
         self.nb_patch = self.shape[2]//self.size
-        # print(f'     SentinelDataset shape: {self.__len__()}')
-
-        self.device = device
-
 
         self.min = torch.min(self.sentinel_data)
         self.max = torch.max(self.sentinel_data)
@@ -157,7 +142,7 @@ class SentinelDataset(torch.utils.data.Dataset):
             inp = inp * mask
 
 
-        return {'x': inp.clone(), 'y': tar.clone()}
+        return {'inp': inp.clone(), 'tar': tar.clone()}
 
 
     
